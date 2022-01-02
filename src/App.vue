@@ -1,26 +1,108 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <router-view />
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import axios from "axios";
+import { fetchApiWeather } from "./api";
+import { db } from "./firebase";
 
 export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-}
+  name: "App",
+  components: {},
+  data() {
+    return {
+      cityName: "Almaty",
+      apiKey: "7941a0b4aae276f33c7eb474f5cb1f73",
+      cities: [],
+    };
+  },
+  async created() {
+    await fetchApiWeather(this.cityName);
+    // console.log(db.collection("cities").onSnapshot);
+    this.getCityWeather();
+    console.log(this.cities);
+  },
+  methods: {
+    getCityWeather() {
+      let firebaseCollection = db.collection("cities");
+
+      firebaseCollection.onSnapshot((snap) => {
+        snap.docChanges().forEach(async (doc) => {
+          if (doc.type === "added") {
+            try {
+              const data = await axios.get(
+                `https://api.openweathermap.org/data/2.5/weather?q=${
+                  doc.doc.data().city
+                }&units=imperial&APPID=${this.apiKey}`
+              );
+
+              firebaseCollection
+                .doc(doc.doc.id)
+                .update({
+                  currentWeather: data.data,
+                })
+                .then(() => {
+                  this.cities.push(doc.doc.data());
+                });
+            } catch (error) {
+              console.log(error);
+            }
+          }
+        });
+      });
+    },
+  },
+};
 </script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+<style lang="scss">
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Quicksand", sans-serif;
+}
+.day {
+  transition: 500ms ease all;
+  background-color: rgb(59, 150, 249);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+.night {
+  transition: 500ms ease all;
+  background-color: rgb(20, 42, 95);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+.main {
+  max-width: 1024px;
+  margin: 0 auto;
+  height: 100vh;
+  .container {
+    padding: 0 20px;
+  }
+}
+.loading {
+  @keyframes spin {
+    to {
+      transform: rotateZ(360deg);
+    }
+  }
+  display: flex;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  span {
+    display: block;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto;
+    border: 2px solid transparent;
+    border-top-color: #142a5f;
+    border-radius: 50%;
+    animation: spin ease 1000ms infinite;
+  }
 }
 </style>
