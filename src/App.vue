@@ -1,15 +1,19 @@
 <template>
-  <router-view />
+  <div class="main">
+    <Navigation />
+    <router-view :cities="cities" />
+  </div>
 </template>
 
 <script>
-import axios from "axios";
+import Navigation from "./components/Navigation.vue";
 import { fetchApiWeather } from "./api";
 import { db } from "./firebase";
+import axios from "axios";
 
 export default {
   name: "App",
-  components: {},
+  components: { Navigation },
   data() {
     return {
       cityName: "Almaty",
@@ -21,7 +25,6 @@ export default {
     await fetchApiWeather(this.cityName);
     // console.log(db.collection("cities").onSnapshot);
     this.getCityWeather();
-    console.log(this.cities);
   },
   methods: {
     getCityWeather() {
