@@ -1,7 +1,7 @@
 <template>
   <div class="grid">
     <div class="city-link" v-for="city in cities" :key="city">
-      <City :city="city" />
+      <City :city="city" :isEdit="isEdit" :cities="cities" />
     </div>
   </div>
 </template>
@@ -14,6 +14,10 @@ export default {
     cities: {
       type: Array,
       default: () => [],
+    },
+    isEdit: {
+      type: Boolean,
+      default: false,
     },
   },
   mounted() {

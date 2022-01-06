@@ -1,38 +1,55 @@
 <template>
   <div class="main">
-    <Navigation />
-    <router-view :cities="cities" />
+    <Modal v-if="modalOpen" @modal-close="modalClose" />
+    <Navigation @add-city="addCity" @edit-city="editCity" :isEdit="isEdit" />
+    <router-view :cities="cities" :isEdit="isEdit" />
   </div>
 </template>
 
 <script>
+import Modal from "./components/Modal.vue";
 import Navigation from "./components/Navigation.vue";
 import { fetchApiWeather } from "./api";
-import { db } from "./firebase";
 import axios from "axios";
+import { db } from "./firebase";
 
 export default {
   name: "App",
-  components: { Navigation },
+  components: { Navigation, Modal },
   data() {
     return {
       cityName: "Almaty",
-      apiKey: "7941a0b4aae276f33c7eb474f5cb1f73",
       cities: [],
+      modalOpen: false,
+      isEdit: false,
+      apiKey: "7941a0b4aae276f33c7eb474f5cb1f73",
     };
   },
+
   async created() {
     await fetchApiWeather(this.cityName);
-    // console.log(db.collection("cities").onSnapshot);
-    this.getCityWeather();
+    await this.getCityWeather();
   },
+
   methods: {
-    getCityWeather() {
+    addCity() {
+      this.modalOpen = true;
+    },
+    editCity() {
+      this.isEdit = !this.isEdit;
+    },
+    modalClose() {
+      this.modalOpen = false;
+    },
+    async getCityWeather() {
       let firebaseCollection = db.collection("cities");
 
       firebaseCollection.onSnapshot((snap) => {
         snap.docChanges().forEach(async (doc) => {
-          if (doc.type === "added") {
+          if (doc.type === "removed") {
+            this.cities = this.cities.filter((city) => city.city !== doc.doc.data().city);
+          }
+          if (doc.type === "added" && !doc.doc.Nd) {
             try {
               const data = await axios.get(
                 `https://api.openweathermap.org/data/2.5/weather?q=${
@@ -51,6 +68,8 @@ export default {
             } catch (error) {
               console.log(error);
             }
+          } else if (doc.type === "added" && doc.doc.Nd) {
+            this.cities.push(doc.doc.data());
           }
         });
       });

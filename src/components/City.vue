@@ -1,5 +1,10 @@
 <template>
   <div class="city">
+    <i
+      v-if="isEdit"
+      class="far fa-trash-alt edit"
+      @click="removeCity(city)"
+    ></i>
     <span>{{ city.city }}</span>
     <div class="weather">
       <span>{{ cityTemp }}&deg;</span>
@@ -12,12 +17,13 @@
         muted
         :src="require(`../assets/video/${weatherIcon}.mp4`)"
       ></video>
+      <div class="bg-overlay"></div>
     </div>
-    <div class="bg-overlay"></div>
   </div>
 </template>
 
 <script>
+import { removeCityFirebase } from "../api";
 export default {
   name: "City",
   props: {
@@ -25,12 +31,28 @@ export default {
       type: Object,
       default: () => {},
     },
+    cities: {
+      type: Array,
+      default: () => [],
+    },
+    isEdit: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
       cityTemp: Math.round(this.city.currentWeather.main.temp),
       weatherIcon: this.city.currentWeather.weather[0].icon,
+      id: null,
+     
     };
+  },
+
+  methods: {
+    removeCity(city) {
+      removeCityFirebase(city.city, this.id);
+    },
   },
 };
 </script>
@@ -46,6 +68,7 @@ export default {
   color: #fff;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   .edit {
+    cursor: pointer;
     border-radius: 0px 15px 0 0;
     border: 10px solid rgb(77, 77, 77);
     background-color: rgb(77, 77, 77);
@@ -96,7 +119,7 @@ export default {
       height: 100%;
       width: 100%;
       top: 0;
-      background-color: rgba(0, 0, 0, 0.2);
+      background-color: rgba(0, 0, 0, 0.5);
     }
   }
 }

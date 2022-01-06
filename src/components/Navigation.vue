@@ -3,8 +3,12 @@
     <nav>
       <router-link to="/"><span>Add city</span></router-link>
       <div class="right">
-        <i class="far fa-edit"></i>
-        <i class="fas fa-sync"></i>
+        <i
+          class="far fa-edit"
+          :class="{ 'edit-active': isEdit }"
+          @click="editCity"
+        ></i>
+        <i class="fas fa-sync" @click="reloadApp"></i>
         <i class="fas fa-plus" @click="addCity"></i>
       </div>
     </nav>
@@ -14,14 +18,24 @@
 <script>
 export default {
   name: "Navigation",
+  props: {
+    isEdit: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data() {
-    return {
-      cities: [],
-    };
+    return {};
   },
   methods: {
     addCity() {
-      this.$router.push("/");
+      this.$emit("add-city");
+    },
+    editCity() {
+      this.$emit("edit-city");
+    },
+    reloadApp() {
+      location.reload();
     },
   },
 };
