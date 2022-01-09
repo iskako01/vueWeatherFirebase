@@ -1,5 +1,5 @@
 <template>
-  <div class="city">
+  <div class="city" @click="weatherView">
     <i
       v-if="isEdit"
       class="far fa-trash-alt edit"
@@ -24,6 +24,7 @@
 
 <script>
 import { removeCityFirebase } from "../api";
+
 export default {
   name: "City",
   props: {
@@ -45,13 +46,17 @@ export default {
       cityTemp: Math.round(this.city.currentWeather.main.temp),
       weatherIcon: this.city.currentWeather.weather[0].icon,
       id: null,
-     
     };
   },
 
   methods: {
     removeCity(city) {
       removeCityFirebase(city.city, this.id);
+    },
+    weatherView() {
+      if (!this.isEdit) {
+        this.$router.push(`/weather/${this.city.city}`);
+      }
     },
   },
 };

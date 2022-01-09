@@ -1,13 +1,35 @@
 <template>
   <div class="main">
-    <Modal v-if="modalOpen" @modal-close="modalClose" />
-    <Navigation @add-city="addCity" @edit-city="editCity" :isEdit="isEdit" />
-    <router-view :cities="cities" :isEdit="isEdit" />
+    <Loading v-if="loading" />
+
+    <div class="app" v-else>
+      <Modal v-if="modalOpen" @modal-close="modalClose" :cities="cities" />
+      <Navigation
+        @add-city="addCity"
+        @edit-city="editCity"
+        :isEdit="isEdit"
+        :addCityActive="addCityActive"
+        :isDay="isDay"
+        :isNight="isNight"
+      />
+      <router-view
+        :cities="cities"
+        :isEdit="isEdit"
+        :isDay="isDay"
+        :isNight="isNight"
+        @is-day="dayTime"
+        @is-night="nightTime"
+        @resetDays="resetDays"
+        @add-new-city="addCity"
+        :loading="loading"
+      />
+    </div>
   </div>
 </template>
 
 <script>
 import Modal from "./components/Modal.vue";
+import Loading from "./components/Loading.vue";
 import Navigation from "./components/Navigation.vue";
 import { fetchApiWeather } from "./api";
 import axios from "axios";
@@ -15,20 +37,25 @@ import { db } from "./firebase";
 
 export default {
   name: "App",
-  components: { Navigation, Modal },
+  components: { Navigation, Modal, Loading },
   data() {
     return {
-      cityName: "Almaty",
+      loading: true,
+      cityName: "Tokio",
       cities: [],
       modalOpen: false,
       isEdit: false,
+      isDay: false,
+      isNight: false,
       apiKey: "7941a0b4aae276f33c7eb474f5cb1f73",
+      addCityActive: false,
     };
   },
 
   async created() {
     await fetchApiWeather(this.cityName);
     await this.getCityWeather();
+    this.checkRoute();
   },
 
   methods: {
@@ -45,9 +72,14 @@ export default {
       let firebaseCollection = db.collection("cities");
 
       firebaseCollection.onSnapshot((snap) => {
+        if (snap.docs.length === 0) {
+          this.loading = false;
+        }
         snap.docChanges().forEach(async (doc) => {
           if (doc.type === "removed") {
-            this.cities = this.cities.filter((city) => city.city !== doc.doc.data().city);
+            this.cities = this.cities.filter(
+              (city) => city.city !== doc.doc.data().city
+            );
           }
           if (doc.type === "added" && !doc.doc.Nd) {
             try {
@@ -64,6 +96,7 @@ export default {
                 })
                 .then(() => {
                   this.cities.push(doc.doc.data());
+                  this.loading = false;
                 });
             } catch (error) {
               console.log(error);
@@ -73,6 +106,28 @@ export default {
           }
         });
       });
+    },
+    checkRoute() {
+      if (this.$route.name === "addCity") {
+        this.addCityActive = true;
+      } else {
+        this.addCityActive = false;
+      }
+    },
+    dayTime() {
+      this.isDay = !this.isDay;
+    },
+    nightTime() {
+      this.isNight = !this.isNight;
+    },
+    resetDays() {
+      this.isDay = false;
+      this.isNight = false;
+    },
+  },
+  watch: {
+    $route() {
+      this.checkRoute();
     },
   },
 };

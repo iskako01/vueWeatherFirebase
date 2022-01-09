@@ -11,6 +11,12 @@
 <script>
 import { addCity } from "../api";
 export default {
+  props: {
+    cities: {
+      type: Object,
+      default: () => {},
+    },
+  },
   data() {
     return {
       city: "",
@@ -21,7 +27,11 @@ export default {
       this.$emit("modal-close");
     },
     async addNewCity() {
-      await addCity(this.city).then(() => this.modalClose());
+      try {
+        await addCity(this.city,this.cities).then(() => this.modalClose());
+      } catch (error) {
+        console.log(error);
+      }
     },
   },
 };
